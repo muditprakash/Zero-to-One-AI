@@ -158,30 +158,61 @@
         // --- Shared Components ---
 
         const ButterflyAI = ({ isActive, message, onClick, className = 'top-0 left-0', cloudDelay = false }) => {
-            return (
-                /* Anchor point exactly at the target location */
-                <div className={`butterfly-wrapper absolute z-[99999] transition-all duration-1000 ${isActive ? 'scale-110' : 'scale-90 opacity-90'} ${className}`}>
-                    
-                    {/* Clickable Hit Area */}
-                    <div className={`absolute -translate-x-1/2 -translate-y-1/2 w-16 h-16 z-[99999] cursor-pointer pointer-events-auto`} onClick={onClick}></div>
+            const anchorRef = useRef(null);
+            const [rect, setRect] = useState(null);
 
-                    {/* Dynamic Butterfly Think Cloud - Positioned above the anchor */}
-                    <div className={`absolute z-[99999] bottom-full left-1/2 -translate-x-1/2 mb-6 px-8 py-6 text-white text-[10px] font-medium text-center transition-all duration-700 w-[300px] leading-relaxed flex items-center justify-center origin-bottom pointer-events-none ${isActive ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-12 scale-50'} ${isActive && cloudDelay ? 'delay-1000' : 'delay-0'}`}>
-                        {/* Scalable SVG Background */}
-                        <svg className="absolute inset-0 w-full h-full drop-shadow-xl" viewBox="0 0 100 60" preserveAspectRatio="none">
-                            <path d="M10,30 Q0,0 50,10 Q100,0 90,30 Q100,60 50,50 Q0,60 10,30 Z" fill="url(#butterflyGradient)" />
-                            <defs>
-                                <linearGradient id="butterflyGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                    <stop offset="0%" style={{ stopColor: '#6366f1', stopOpacity: 1 }} />
-                                    <stop offset="100%" style={{ stopColor: '#2563eb', stopOpacity: 1 }} />
-                                </linearGradient>
-                            </defs>
-                        </svg>
-                        <div className="relative z-10">
-                            {message}
-                        </div>
-                    </div>
+            useEffect(() => {
+                const updateRect = () => {
+                    if (anchorRef.current) {
+                        setRect(anchorRef.current.getBoundingClientRect());
+                    }
+                };
+                
+                updateRect();
+                const timeout = setTimeout(updateRect, 100);
+                
+                window.addEventListener('scroll', updateRect, true);
+                window.addEventListener('resize', updateRect);
+                
+                return () => {
+                    clearTimeout(timeout);
+                    window.removeEventListener('scroll', updateRect, true);
+                    window.removeEventListener('resize', updateRect);
+                };
+            }, []);
+
+            return (
+                <div className={`butterfly-wrapper absolute z-[999] transition-all duration-1000 ${isActive ? 'scale-110' : 'scale-90 opacity-90'} ${className}`} ref={anchorRef}>
                     
+                    <div className={`absolute -translate-x-1/2 -translate-y-1/2 w-16 h-16 z-30 cursor-pointer pointer-events-auto`} onClick={onClick}></div>
+
+                    {rect && ReactDOM.createPortal(
+                        <div 
+                            style={{ 
+                                position: 'fixed', 
+                                top: rect.top, 
+                                left: rect.left,
+                                zIndex: 999999
+                            }}
+                            className="pointer-events-none"
+                        >
+                            <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-6 px-8 py-6 text-white text-[10px] font-medium text-center transition-all duration-700 w-[300px] leading-relaxed flex items-center justify-center origin-bottom ${isActive ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-12 scale-50'} ${isActive && cloudDelay ? 'delay-1000' : 'delay-0'}`}>
+                                <svg className="absolute inset-0 w-full h-full drop-shadow-xl" viewBox="0 0 100 60" preserveAspectRatio="none">
+                                    <path d="M10,30 Q0,0 50,10 Q100,0 90,30 Q100,60 50,50 Q0,60 10,30 Z" fill="url(#butterflyGradient)" />
+                                    <defs>
+                                        <linearGradient id="butterflyGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                            <stop offset="0%" style={{ stopColor: '#6366f1', stopOpacity: 1 }} />
+                                            <stop offset="100%" style={{ stopColor: '#2563eb', stopOpacity: 1 }} />
+                                        </linearGradient>
+                                    </defs>
+                                </svg>
+                                <div className="relative z-10">
+                                    {message}
+                                </div>
+                            </div>
+                        </div>,
+                        document.body
+                    )}
                     {/* Butterfly Body & Wings - Centered precisely on the anchor */}
                     <div className={`absolute -translate-x-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center transition-transform duration-700 pointer-events-none ${isActive ? 'butterfly-hover' : ''}`}>
                         <div className="absolute w-[3px] h-6 bg-slate-900 rounded-full z-20 shadow-sm"></div>
